@@ -2,7 +2,9 @@ from setuptools import find_packages, setup
 
 VERSION = '0.1.0'
 
-INSTALL_REQUIRES = []
+INSTALL_REQUIRES = [
+    'dataclasses;python_version<3.7',
+]
 
 EXTRAS_REQUIRE = {
     'memory': ['cachetools'],
@@ -21,7 +23,7 @@ setup(
     author='Theron Luhn',
     author_email='theron@luhn.com',
     packages=find_packages(),
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRE,
 )
