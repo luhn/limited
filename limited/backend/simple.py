@@ -1,7 +1,12 @@
 from time import monotonic
 from threading import Lock
 from typing import Dict, NamedTuple
-from .interface import Backend
+from .interface import Backend, ZoneBackend
+
+try:
+    from cachetools import TTLCache
+except ImportError:
+    TTLCache = None
 
 
 class Bucket(NamedTuple):
@@ -9,28 +14,47 @@ class Bucket(NamedTuple):
     last_updated: float
 
 
-class SimpleBackend(Dict[str, Bucket], Backend):
-    lock: Lock
-
+class MemoryBackend(Backend):
     def __init__(self):
-        dict.__init__(self)
-        self.lock = Lock()
+        if TTLCache is None:
+            raise ImportError(
+                'Must have cachetools installed to use memory backend.'
+            )
 
-    def _refill(self, bucket: Bucket, size: float, rate: float) -> Bucket:
+    def __call__(self, name: str, rate: Rate) -> ZoneBackend:
+        cache = TTLCache(None, rate.time)
+        return MemoryZoneBackend(cache, rate)
+
+
+class SimpleMemoryBackend(Backend):
+    def __call__(self, name: str, rate: Rate) -> ZoneBackend:
+        return MemoryZoneBackend(dict(), rate)
+
+
+class MemoryZoneBackend(ZoneBackend):
+    lock: Lock
+    mapping: MutableMapping
+
+    def __init__(self, mapping: MutableMapping, rate: Rate):
+        self.lock = Lock()
+        self.mapping = mapping
+        self.rate = rate
+
+    def _refill(self, bucket: Bucket) -> Bucket:
         time = monotonic()
         delta = time - bucket.last_updated
         tokens = bucket.tokens + delta * rate
         tokens = max(min(tokens, size), 0.0)
         return Bucket(tokens, time)
 
-    def _get_bucket(self, key: str, size: float, rate: float):
+    def _get_bucket(self, key: str):
         bucket = self.pop(key, None)
         if bucket is None:
             return Bucket(size, monotonic())
         else:
             return self._refill(bucket, size, rate)
 
-    def count(self, key: str, size: int, rate: float) -> float:
+    def count(self, key: str) -> float:
         size = float(size)
         with self.lock:
             bucket = self._get_bucket(key, size, rate)
@@ -40,7 +64,7 @@ class SimpleBackend(Dict[str, Bucket], Backend):
                 self[key] = bucket  # Persist bucket
                 return bucket.tokens
 
-    def remove(self, key: str, count: int, size: int, rate: float) -> bool:
+    def remove(self, key: str, count: int) -> bool:
         size = float(size)
         with self.lock:
             bucket = self._get_bucket(key, size, rate)
