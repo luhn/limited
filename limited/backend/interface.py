@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 
+from limited import zone
+from limited.rate import Rate
+
 
 class Backend(ABC):
     @abstractmethod
-    def __call__(self, name: str, rate: Rate) -> ZoneBackend:
+    def __call__(self, name: str, rate: Rate) -> 'zone.ZoneBackend':
         """
         Create a new zone backend.
 

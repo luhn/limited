@@ -1,10 +1,13 @@
-from time import monotonic
 from threading import Lock
-from typing import Dict, NamedTuple
+from time import monotonic
+from typing import MutableMapping, NamedTuple
+
+from limited.rate import Rate
+
 from .interface import Backend, ZoneBackend
 
 try:
-    from cachetools import TTLCache
+    from cachetools import TTLCache  # type: ignore
 except ImportError:
     TTLCache = None
 
@@ -39,40 +42,39 @@ class MemoryZoneBackend(ZoneBackend):
         self.lock = Lock()
         self.mapping = mapping
         self.rate = rate
+        self.size = rate.count
 
     def _refill(self, bucket: Bucket) -> Bucket:
         time = monotonic()
         delta = time - bucket.last_updated
-        tokens = bucket.tokens + delta * rate
-        tokens = max(min(tokens, size), 0.0)
+        tokens = bucket.tokens + delta * (self.rate.count / self.rate.time)
+        tokens = max(min(tokens, self.size), 0.0)
         return Bucket(tokens, time)
 
     def _get_bucket(self, key: str):
-        bucket = self.pop(key, None)
+        bucket = self.mapping.pop(key, None)
         if bucket is None:
-            return Bucket(size, monotonic())
+            return Bucket(self.size, monotonic())
         else:
-            return self._refill(bucket, size, rate)
+            return self._refill(bucket)
 
     def count(self, key: str) -> float:
-        size = float(size)
         with self.lock:
-            bucket = self._get_bucket(key, size, rate)
-            if bucket.tokens == size:
-                return size  # Bucket is full, don't persist it
+            bucket = self._get_bucket(key)
+            if bucket.tokens == self.size:
+                return float(self.size)  # Bucket is full, don't persist it
             else:
-                self[key] = bucket  # Persist bucket
+                self.mapping[key] = bucket  # Persist bucket
                 return bucket.tokens
 
     def remove(self, key: str, count: int) -> bool:
-        size = float(size)
         with self.lock:
-            bucket = self._get_bucket(key, size, rate)
+            bucket = self._get_bucket(key)
             if bucket.tokens < count:
                 # Not enough tokens
-                self[key] = bucket
+                self.mapping[key] = bucket
                 return False
             else:
                 tokens = bucket.tokens - count
-                self[key] = Bucket(tokens, bucket.last_updated)
+                self.mapping[key] = Bucket(tokens, bucket.last_updated)
                 return True

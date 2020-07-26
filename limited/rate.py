@@ -8,4 +8,4 @@ class Rate:
 
 
 def parse_rate(s: str) -> Rate:
-    return None
+    return Rate(count=1, time=1.0)
