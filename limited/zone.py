@@ -5,12 +5,14 @@ from .rate import Rate, parse_rate
 
 
 class Zone:
-    name: str
     backend: ZoneBackend
-    size: int
-    rate: int
 
-    def __init__(self, name: str, rate: Union[Rate, str], backend: Backend):
+    def __init__(
+            self,
+            name: str,
+            rate: Union[Rate, str],
+            backend: Backend,
+    ):
         if isinstance(rate, str):
             rate = parse_rate(rate)
         self.backend = backend(name, rate)
@@ -21,7 +23,7 @@ class Zone:
     def check(self, identity: str) -> bool:
         return self.get(identity) >= 1
 
-    def increment(self, identity: str):
+    def increment(self, identity: str) -> None:
         self.backend.remove(identity, 1)
 
     def limit(self, identity: str) -> bool:

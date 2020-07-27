@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 
-from limited import zone
 from limited.rate import Rate
 
 
 class Backend(ABC):
     @abstractmethod
-    def __call__(self, name: str, rate: Rate) -> 'zone.ZoneBackend':
+    def __call__(self, name: str, rate: Rate) -> 'ZoneBackend':
         """
         Create a new zone backend.
 
@@ -15,7 +14,7 @@ class Backend(ABC):
 
     @classmethod
     @abstractmethod
-    def from_env(cls, environ):
+    def from_env(cls, environ) -> 'Backend':
         """
         Configure backend from environment variables.
 
@@ -24,7 +23,7 @@ class Backend(ABC):
 
     @classmethod
     @abstractmethod
-    def from_ini(cls, settings):
+    def from_ini(cls, settings) -> 'Backend':
         """
         Configure backend from ini file.
 
