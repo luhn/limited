@@ -1,0 +1,30 @@
+name: Python
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python setup.py install
+        python -m pip install -r testreq.txt
+    - name: flake8
+      run: flake8 limited tests
+    - name: isort
+      run: isort -c limited tests
+    - name: mypy
+      run: mypy limited tests
+    - name: Tests
+      run: pytest tests
