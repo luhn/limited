@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import MutableMapping
 
-import pytest  # type: ignore
+import pytest
 
 from limited import LimitExceededException, Rate, Zone
 from limited.backend.interface import Backend, ZoneBackend

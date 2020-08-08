@@ -1,5 +1,5 @@
 import importlib
-from typing import Dict, Type
+from typing import Dict, Type, cast
 
 from .interface import Backend, ZoneBackend
 
@@ -26,7 +26,7 @@ def load_backend(name: str) -> Type[Backend]:
     name = BUILTIN_BACKENDS.get(name, name)
     p, m = name.rsplit('.', 1)
     mod = importlib.import_module(p)
-    return getattr(mod, m)
+    return cast(Type[Backend], getattr(mod, m))
 
 
 __all__ = [

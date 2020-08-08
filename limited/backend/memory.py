@@ -7,7 +7,7 @@ from limited.rate import Rate
 from .interface import Backend, ZoneBackend
 
 try:
-    from cachetools import TTLCache  # type: ignore
+    from cachetools import TTLCache
 except ImportError:
     TTLCache = None
 
@@ -51,7 +51,7 @@ class MemoryZoneBackend(ZoneBackend):
         tokens = max(min(tokens, self.size), 0.0)
         return Bucket(tokens, time)
 
-    def _get_bucket(self, key: str):
+    def _get_bucket(self, key: str) -> Bucket:
         bucket = self.mapping.pop(key, None)
         if bucket is None:
             return Bucket(self.size, monotonic())

@@ -25,6 +25,6 @@ jobs:
     - name: isort
       run: isort -c limited tests
     - name: mypy
-      run: mypy limited tests
+      run: mypy
     - name: Tests
       run: pytest tests
