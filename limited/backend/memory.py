@@ -7,9 +7,9 @@ from limited.rate import Rate
 from .interface import Backend, ZoneBackend
 
 try:
-    from cachetools import TTLCache
+    from cachetools import TTLCache  # type: ignore
 except ImportError:
-    TTLCache = None
+    raise ImportError('Must have cachetools installed to use memory backend.')
 
 
 class Bucket(NamedTuple):
@@ -18,63 +18,46 @@ class Bucket(NamedTuple):
 
 
 class MemoryBackend(Backend):
-    def __init__(self):
-        if TTLCache is None:
-            raise ImportError(
-                'Must have cachetools installed to use memory backend.'
-            )
-
     def __call__(self, name: str, rate: Rate) -> ZoneBackend:
         cache = TTLCache(None, rate.time)
         return MemoryZoneBackend(cache, rate)
 
+    @classmethod
+    def from_env(cls, environ) -> 'MemoryBackend':
+        pass
 
-class SimpleMemoryBackend(Backend):
-    def __call__(self, name: str, rate: Rate) -> ZoneBackend:
-        return MemoryZoneBackend(dict(), rate)
+    @classmethod
+    def from_ini(cls, settings) -> 'MemoryBackend':
+        pass
 
 
 class MemoryZoneBackend(ZoneBackend):
     lock: Lock
-    mapping: MutableMapping
 
-    def __init__(self, mapping: MutableMapping, rate: Rate):
+    def __init__(self, mapping: MutableMapping[str, Bucket], rate: Rate):
         self.lock = Lock()
         self.mapping = mapping
         self.rate = rate
         self.size = rate.count
 
-    def _refill(self, bucket: Bucket) -> Bucket:
-        time = monotonic()
+    def _count(self, key: str, time: float) -> float:
+        bucket = self.mapping.get(key)
+        if bucket is None:
+            return self.size
         delta = time - bucket.last_updated
         tokens = bucket.tokens + delta * (self.rate.count / self.rate.time)
-        tokens = max(min(tokens, self.size), 0.0)
-        return Bucket(tokens, time)
-
-    def _get_bucket(self, key: str) -> Bucket:
-        bucket = self.mapping.pop(key, None)
-        if bucket is None:
-            return Bucket(self.size, monotonic())
-        else:
-            return self._refill(bucket)
+        tokens = min(tokens, self.size)
+        return tokens
 
     def count(self, key: str) -> float:
-        with self.lock:
-            bucket = self._get_bucket(key)
-            if bucket.tokens == self.size:
-                return float(self.size)  # Bucket is full, don't persist it
-            else:
-                self.mapping[key] = bucket  # Persist bucket
-                return bucket.tokens
+        return self._count(key, monotonic())
 
     def remove(self, key: str, count: int) -> bool:
         with self.lock:
-            bucket = self._get_bucket(key)
-            if bucket.tokens < count:
-                # Not enough tokens
-                self.mapping[key] = bucket
+            now = monotonic()
+            tokens = self._count(key, now)
+            if tokens < count:
                 return False
             else:
-                tokens = bucket.tokens - count
-                self.mapping[key] = Bucket(tokens, bucket.last_updated)
+                self.mapping[key] = Bucket(tokens - count, now)
                 return True
