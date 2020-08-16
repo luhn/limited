@@ -2,8 +2,6 @@ from threading import Lock
 from time import monotonic
 from typing import MutableMapping, NamedTuple
 
-from limited.rate import Rate
-
 from .interface import Backend, ZoneBackend
 
 try:
@@ -18,9 +16,10 @@ class Bucket(NamedTuple):
 
 
 class MemoryBackend(Backend):
-    def __call__(self, name: str, rate: Rate) -> ZoneBackend:
-        cache = TTLCache(None, rate.time)
-        return MemoryZoneBackend(cache, rate)
+    def __call__(self, name: str, rate: float, size: int) -> ZoneBackend:
+        ttl = size / rate
+        cache = TTLCache(None, ttl)
+        return MemoryZoneBackend(cache, rate, size)
 
     @classmethod
     def from_env(cls, environ) -> 'MemoryBackend':
@@ -34,18 +33,20 @@ class MemoryBackend(Backend):
 class MemoryZoneBackend(ZoneBackend):
     lock: Lock
 
-    def __init__(self, mapping: MutableMapping[str, Bucket], rate: Rate):
+    def __init__(
+            self, mapping: MutableMapping[str, Bucket], rate: float, size: int,
+    ):
         self.lock = Lock()
         self.mapping = mapping
         self.rate = rate
-        self.size = rate.count
+        self.size = size
 
     def _count(self, key: str, time: float) -> float:
         bucket = self.mapping.get(key)
         if bucket is None:
             return self.size
         delta = time - bucket.last_updated
-        tokens = bucket.tokens + delta * (self.rate.count / self.rate.time)
+        tokens = bucket.tokens + delta * self.rate
         tokens = min(tokens, self.size)
         return tokens
 

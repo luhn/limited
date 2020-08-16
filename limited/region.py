@@ -1,8 +1,7 @@
 import os
 
-from .backend import load_backend
-from .rate import parse_rate
-from .zone import Zone
+from .backend import Backend, load_backend
+from .zone import Zone, parse_rate
 
 
 class Region:
@@ -11,17 +10,20 @@ class Region:
 
 
 class EnvVarRegion:
-    def __init__(self):
-        Backend = load_backend(os.environ['LIMITED_BACKEND'])
-        self.backend = Backend.from_env(os.environ)
+    backend: Backend
+
+    def __init__(self) -> None:
+        _Backend = load_backend(os.environ['LIMITED_BACKEND'])
+        self.backend = _Backend.from_env(os.environ)
 
     def __getitem__(self, key: str):
         try:
             rate_str = os.environ[f'LIMITED_{ key.upper() }']
         except KeyError:
             raise KeyError(f'No such zone named { key }')
-        rate = parse_rate(rate_str)
-        return Zone(key, rate, self.backend)
+        rate, size = parse_rate(rate_str)
+        backend = self.backend(key, rate, size)
+        return Zone(key, backend)
 
 
 class IniRegion:

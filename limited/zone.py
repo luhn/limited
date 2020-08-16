@@ -1,21 +1,15 @@
-from typing import NoReturn, Union
+from typing import NoReturn, Tuple
 
-from .backend.interface import Backend, ZoneBackend
-from .rate import Rate, parse_rate
+from .backend.interface import ZoneBackend
 
 
 class Zone:
-    backend: ZoneBackend
-
     def __init__(
             self,
             name: str,
-            rate: Union[Rate, str],
-            backend: Backend,
+            backend: ZoneBackend,
     ):
-        if isinstance(rate, str):
-            rate = parse_rate(rate)
-        self.backend = backend(name, rate)
+        self.backend = backend
 
     def get(self, identity: str) -> int:
         return int(self.backend.count(identity))
@@ -39,3 +33,7 @@ class Zone:
 
 class LimitExceededException(Exception):
     pass
+
+
+def parse_rate(s: str) -> Tuple[float, int]:
+    return 1.0, 1

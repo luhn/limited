@@ -3,15 +3,15 @@ from typing import MutableMapping
 
 import pytest
 
-from limited import LimitExceededException, Rate, Zone
+from limited import LimitExceededException, Zone
 from limited.backend.interface import Backend, ZoneBackend
 
 Buckets = MutableMapping[str, float]
 
 
 class MockBackend(Backend):
-    def __call__(self, name: str, rate: Rate) -> ZoneBackend:
-        return MockZoneBackend(name, rate)
+    def __call__(self, name: str, rate: float, size: int) -> ZoneBackend:
+        return MockZoneBackend(name, rate, size)
 
     @classmethod
     def from_env(cls, environ) -> Backend:
@@ -24,13 +24,15 @@ class MockBackend(Backend):
 
 class MockZoneBackend(ZoneBackend):
     name: str
-    rate: Rate
+    rate: float
+    size: int
     buckets: Buckets
 
-    def __init__(self, name: str, rate: Rate):
+    def __init__(self, name: str, rate: float, size: int):
         self.name = name
         self.rate = rate
-        self.buckets = defaultdict(lambda: float(rate.count))
+        self.size = size
+        self.buckets = defaultdict(lambda: float(size))
 
     def count(self, key: str) -> float:
         return self.buckets[key]
@@ -45,7 +47,7 @@ class MockZoneBackend(ZoneBackend):
 
 @pytest.fixture
 def zone():
-    return Zone('name', Rate(10, 5), MockBackend())
+    return Zone('name', MockBackend())
 
 
 @pytest.fixture
@@ -54,11 +56,12 @@ def buckets(zone):
 
 
 def test_zone_init():
-    zone = Zone('name', Rate(4, 5), MockBackend())
+    zone = Zone('name', MockBackend())
     backend = zone.backend
     assert isinstance(backend, MockZoneBackend)
     assert backend.name == 'name'
-    assert backend.rate == Rate(4, 5)
+    assert backend.rate == 1.0
+    assert backend.size == 10
 
 
 def test_zone_init_parse():
