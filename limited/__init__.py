@@ -1,8 +1,11 @@
+from .backend import Backend, Zone, load_backend
+from .exceptions import LimitExceededException
 from .region import Region
-from .zone import LimitExceededException, Zone
 
 __all__ = [
+    'Backend',
     'LimitExceededException',
     'Region',
     'Zone',
+    'load_backend',
 ]

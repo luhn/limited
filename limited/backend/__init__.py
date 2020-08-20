@@ -1,7 +1,8 @@
 import importlib
 from typing import Dict, Type, cast
 
-from .interface import Backend, ZoneBackend
+from .backend import Backend
+from .zone import Zone
 
 BUILTIN_BACKENDS: Dict[str, str] = {
     'simple': 'limited.backends.memory.SimpleMemoryBackend',
@@ -32,5 +33,5 @@ def load_backend(name: str) -> Type[Backend]:
 __all__ = [
     'load_backend',
     'Backend',
-    'ZoneBackend',
+    'Zone',
 ]

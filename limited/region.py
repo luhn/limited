@@ -1,7 +1,7 @@
 import os
+from typing import Tuple
 
-from .backend import Backend, load_backend
-from .zone import Zone, parse_rate
+from .backend import Backend, Zone, load_backend
 
 
 class Region:
@@ -16,14 +16,13 @@ class EnvVarRegion:
         _Backend = load_backend(os.environ['LIMITED_BACKEND'])
         self.backend = _Backend.from_env(os.environ)
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Zone:
         try:
             rate_str = os.environ[f'LIMITED_{ key.upper() }']
         except KeyError:
             raise KeyError(f'No such zone named { key }')
         rate, size = parse_rate(rate_str)
-        backend = self.backend(key, rate, size)
-        return Zone(key, backend)
+        return self.backend(key, rate, size)
 
 
 class IniRegion:
@@ -34,3 +33,7 @@ class IniRegion:
 
     def __getitem__(self, key: str):
         pass
+
+
+def parse_rate(rate_str) -> Tuple[float, int]:
+    raise NotImplementedError()
