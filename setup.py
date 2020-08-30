@@ -8,6 +8,7 @@ INSTALL_REQUIRES = [
 
 EXTRAS_REQUIRE = {
     'memory': ['cachetools'],
+    'redis': ['redis>=3,<4'],
 }
 
 with open("README.md", "r") as fh:

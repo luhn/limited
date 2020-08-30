@@ -4,6 +4,7 @@ from time import sleep
 import pytest
 
 from limited.backend.memory import MemoryBackend
+from limited.backend.redis import RedisBackend
 
 
 @pytest.fixture(scope='session')
@@ -11,9 +12,16 @@ def memory_backend():
     return MemoryBackend(100)
 
 
+@pytest.fixture(scope='session')
+def redis_backend(request):
+    url = request.config.getoption('--redis-url')
+    return RedisBackend(url)
+
+
 @pytest.mark.integration
 @pytest.mark.parametrize('backend', [
     pytest.lazy_fixture('memory_backend'),
+    pytest.lazy_fixture('redis_backend'),
 ])
 def test_integration(backend):
     zone = backend('mybackend', 1.0, 10)

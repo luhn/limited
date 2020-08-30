@@ -6,6 +6,10 @@ def pytest_addoption(parser):
         '--run-integration', action='store_true', default=False,
         help='run integration tests'
     )
+    parser.addoption(
+        '--redis-url', action='store', default='redis://',
+        help='URL for connecting to redis.'
+    )
 
 
 def pytest_configure(config):
