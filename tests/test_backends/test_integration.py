@@ -11,6 +11,7 @@ def memory_backend():
     return MemoryBackend(100)
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize('backend', [
     pytest.lazy_fixture('memory_backend'),
 ])
