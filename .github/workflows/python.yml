@@ -18,7 +18,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python setup.py install
+        python -m pip install .[memory]
         python -m pip install -r testreq.txt
     - name: flake8
       run: flake8 limited tests
