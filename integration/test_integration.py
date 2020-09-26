@@ -8,17 +8,18 @@ from limited.backend.redis import RedisBackend
 
 
 @pytest.fixture(scope='session')
-def memory_backend():
+def memory_backend(check_backend):
+    check_backend('memory')
     return MemoryBackend(100)
 
 
 @pytest.fixture(scope='session')
-def redis_backend(request):
+def redis_backend(request, check_backend):
+    check_backend('redis')
     url = request.config.getoption('--redis-url')
     return RedisBackend(url)
 
 
-@pytest.mark.integration
 @pytest.mark.parametrize('backend', [
     pytest.lazy_fixture('memory_backend'),
     pytest.lazy_fixture('redis_backend'),
