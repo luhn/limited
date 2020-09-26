@@ -1,10 +1,9 @@
-name: Python
+name: Tests
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -18,35 +17,14 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install .[memory,redis]
+        python -m pip install .[memory]
         python -m pip install -r testreq.txt
     - name: flake8
-      run: flake8 limited tests
+      run: flake8 limited tests integration
     - name: isort
-      run: isort -c limited tests
+      run: isort -c limited tests integration
     - name: mypy
       run: mypy
     - name: Tests
       run: pytest tests
 
-  integration:
-    runs-on: ubuntu-latest
-    container: python:3.6  # Test with lowest supported version
-
-    services:
-      redis:
-        image: "redis:alpine"
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: |
-        python -m pip install .[memory,redis]
-        python -m pip install -r testreq.txt
-    - name: Integration tests
-      run: pytest tests --run-integration --redis-url redis://redis

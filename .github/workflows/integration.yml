@@ -1,0 +1,39 @@
+name: Integration Tests
+
+on: [push, pull_request]
+
+jobs:
+  memory:
+    runs-on: ubuntu-latest
+    container: python:3.6  # Test with lowest supported version
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        python -m pip install .[memory]
+        python -m pip install -r testreq.txt
+    - name: Integration tests
+      run: pytest integration --backends memory
+
+  redis:
+    runs-on: ubuntu-latest
+    container: python:3.6
+
+    services:
+      redis:
+        image: "redis:alpine"
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        python -m pip install .[redis]
+        python -m pip install -r testreq.txt
+    - name: Integration tests
+      run: pytest integration --backends redis --redis-url redis://redis

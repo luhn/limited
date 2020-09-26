@@ -3,19 +3,20 @@ from time import sleep
 
 import pytest
 
-from limited.backend.memory import MemoryBackend
-from limited.backend.redis import RedisBackend
-
 
 @pytest.fixture(scope='session')
 def memory_backend(check_backend):
     check_backend('memory')
+
+    from limited.backend.memory import MemoryBackend
     return MemoryBackend(100)
 
 
 @pytest.fixture(scope='session')
 def redis_backend(request, check_backend):
     check_backend('redis')
+
+    from limited.backend.redis import RedisBackend
     url = request.config.getoption('--redis-url')
     return RedisBackend(url)
 
