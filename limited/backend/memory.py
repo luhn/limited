@@ -1,9 +1,8 @@
 from threading import Lock
 from time import monotonic
-from typing import MutableMapping, NamedTuple
+from typing import MutableMapping, NamedTuple, Mapping
 
 from .backend import Backend
-from .zone import Zone
 
 try:
     from cachetools import TTLCache  # type: ignore
@@ -16,34 +15,21 @@ class Bucket(NamedTuple):
     last_updated: float
 
 
-class MemoryBackend(Backend):
-    def __init__(self, size: int):
-        self.size = size
+class MemoryZone(Backend):
+    SETTINGS = {
+        'store_size': int,
+    }
 
-    def __call__(self, name: str, rate: float, size: int) -> Zone:
-        return MemoryZone(self.size, rate, size)
-
-    @classmethod
-    def from_env(cls, environ) -> 'MemoryBackend':
-        pass
-
-    @classmethod
-    def from_ini(cls, settings) -> 'MemoryBackend':
-        pass
-
-
-class MemoryZone(Zone):
     lock: Lock
-    mapping: MutableMapping[str, Bucket]
+    mappings: MutableMapping[tuple[str, str], Bucket]
 
-    def __init__(self, store_size: int, rate: float, bucket_size: int):
-        self.rate = rate
-        self.size = bucket_size
-        self.mapping = TTLCache(store_size, self.ttl)
+    def __init__(self, store_size: int):
+        assert not settings
+        self.mappings = TTLCache(store_size, self.ttl)
         self.lock = Lock()
 
-    def _count(self, key: str, time: float) -> int:
-        bucket = self.mapping.get(key)
+    def _count(self, zone: str, key: str, time: float) -> int:
+        bucket = self.mapping.get((zone, key))
         if bucket is None:
             return self.size
         delta = time - bucket.last_updated
@@ -51,15 +37,15 @@ class MemoryZone(Zone):
         tokens = min(tokens, self.size)
         return int(tokens)
 
-    def count(self, key: str) -> int:
-        return self._count(key, monotonic())
+    def count(self, zone: str, key: str) -> int:
+        return self._count(zone, key, monotonic())
 
-    def remove(self, key: str, count: int) -> bool:
+    def remove(self, zone: str, key: str, count: int) -> bool:
         with self.lock:
             now = monotonic()
-            tokens = self._count(key, now)
+            tokens = self._count(zone, key, now)
             if tokens < count:
                 return False
             else:
-                self.mapping[key] = Bucket(tokens - count, now)
+                self.mapping[(zone, key)] = Bucket(tokens - count, now)
                 return True
