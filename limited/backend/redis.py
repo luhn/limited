@@ -1,34 +1,39 @@
 try:
     from redis import Redis
-    from redis.client import Script
 except ImportError:
     raise ImportError('Must have redis installed to use redis backend.')
 
 from .backend import Backend
+from ..zone import Zone
 
 
-class RedisZone(Backend):
-    def __init__(self, rate: float, size: int, redis_url: str, **settings: Mapping[):
+class RedisBackend(Backend):
+    SETTINGS = {
+        'redis_url': str,
+    }
+
+    prefix: str
+
+    def __init__(self, redis_url: str):
         redis = Redis.from_url(redis_url)
+        self.prefix = 'limited'
         self.count_func = redis.register_script(REDIS_COUNT)
         self.remove_func = redis.register_script(REDIS_REMOVE)
-        self.name = name
-        self.rate = rate
-        self.size = size
-        self.count_func = count_func
-        self.remove_func = remove_func
 
-    def _key(self, zone: str, key: str) -> str:
-        return f'{self.name}:{zone}:{key}'
+    def _key(self, zone: Zone, key: str) -> str:
+        return f'{self.prefix}:{zone.name}:{key}'
 
-    def count(self, zone: str, key: str) -> int:
-        value = self.count_func(keys=[key], args=[self.rate, self.size])
-        return int(value)
+    def count(self, zone: Zone, identity: str) -> float:
+        key = self._key(zone, identity)
+        value = self.count_func(keys=[key], args=[zone.rate, zone.size])
+        assert isinstance(value, float)
+        return value
 
-    def remove(self, zone: str, key: str, count: int) -> bool:
+    def remove(self, zone: Zone, identity: str, count: int) -> bool:
+        key = self._key(zone, identity)
         value = self.remove_func(
             keys=[key],
-            args=[self.rate, self.size, count],
+            args=[zone.rate, zone.size, count],
         )
         return bool(value)
 

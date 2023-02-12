@@ -2,17 +2,19 @@ import importlib
 from typing import Dict, Type, cast
 
 from .backend import Backend
-from .zone import Zone
+from .setting import Setting
+from .memory import MemoryBackend
+from .redis import RedisBackend
 
-BUILTIN_BACKENDS: Dict[str, str] = {
-    'simple': 'limited.backends.memory.SimpleMemoryBackend',
-    'memory': 'limited.backends.memory.MemoryBackend',
-    'redis': 'limited.backends.redis.RedisBackend',
-    'dynamodb': 'limited.backends.dynamodb.DynamoDBBackend',
+
+BUILTIN_BACKENDS: Dict[str, Type[Backend]] = {
+    'memory': MemoryBackend,
+    'redis': RedisBackend,
+    # 'dynamodb': DynamoDBBackend,
 }
 
 
-def load_backend(name: str) -> Type[Backend]:
+def load_backend(backend: str | Type[Backend]) -> Type[Backend]:
     """
     Load a backend by name.  Can either be the name of a builtin backend or a
     fully qualified name of a function, e.g. ``myproject.module.MyBackend``.
@@ -24,14 +26,22 @@ def load_backend(name: str) -> Type[Backend]:
     * ``dynamodb``
 
     """
-    name = BUILTIN_BACKENDS.get(name, name)
-    p, m = name.rsplit('.', 1)
-    mod = importlib.import_module(p)
-    return cast(Type[Backend], getattr(mod, m))
+    backend = BUILTIN_BACKENDS.get(name, name)
+    if issubclass(backend, Backend):
+        return backend
+    elif isinstance(backend, str):
+        p, m = backend.rsplit('.', 1)
+        mod = importlib.import_module(p)
+        attr = getattr(mod, m)
+        if issubclass(attr, Backend):
+            return attr
+        else:
+            raise TypeError('Backend must be subclass of Backend class.')
+    else:
+        raise ValueError('Expecting string or Backend subclass.')
 
 
 __all__ = [
     'load_backend',
     'Backend',
-    'Zone',
 ]
