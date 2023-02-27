@@ -1,7 +1,11 @@
+from __future__ import annotations
+import typing
 from abc import ABC, abstractmethod
 
 from .settings import SettingMap
-from ..zone import Zone
+
+if typing.TYPE_CHECKING:
+    from limited.zone import Zone
 
 
 class Backend(ABC):

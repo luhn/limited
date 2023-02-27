@@ -2,14 +2,12 @@ import importlib
 from typing import Dict, Type
 
 from .backend import Backend
-from .memory import MemoryBackend
-from .redis import RedisBackend
 
 
 BUILTIN_BACKENDS: Dict[str, Type[Backend]] = {
-    'memory': MemoryBackend,
-    'redis': RedisBackend,
-    # 'dynamodb': DynamoDBBackend,
+    'memory': '.memory.MemoryBackend',
+    'redis': '.redis.RedisBackend',
+    'dynamodb': '.dynamodb.DynamoDBBackend',
 }
 
 

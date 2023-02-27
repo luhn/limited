@@ -1,8 +1,8 @@
 from .backend import Backend, load_backend
-from .exceptions import LimitExceededException
+from .exceptions import LimitExceeded
 
 __all__ = [
     'Backend',
-    'LimitExceededException',
+    'LimitExceeded',
     'load_backend',
 ]
