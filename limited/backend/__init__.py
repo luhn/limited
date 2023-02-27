@@ -1,8 +1,7 @@
 import importlib
-from typing import Dict, Type, cast
+from typing import Dict, Type
 
 from .backend import Backend
-from .setting import Setting
 from .memory import MemoryBackend
 from .redis import RedisBackend
 
@@ -26,10 +25,13 @@ def load_backend(backend: str | Type[Backend]) -> Type[Backend]:
     * ``dynamodb``
 
     """
-    backend = BUILTIN_BACKENDS.get(name, name)
     if issubclass(backend, Backend):
         return backend
     elif isinstance(backend, str):
+        try:
+            backend = BUILTIN_BACKENDS[backend]
+        except KeyError:
+            raise ValueError(f'No such backend "{backend}"')
         p, m = backend.rsplit('.', 1)
         mod = importlib.import_module(p)
         attr = getattr(mod, m)

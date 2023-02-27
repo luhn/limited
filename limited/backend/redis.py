@@ -25,7 +25,10 @@ class RedisBackend(Backend):
 
     def count(self, zone: Zone, identity: str) -> float:
         key = self._key(zone, identity)
-        value = self.count_func(keys=[key], args=[zone.rate, zone.size])
+        value = self.count_func(
+            keys=[key],
+            args=[zone.rate.per_second, zone.rate.count],
+        )
         assert isinstance(value, float)
         return value
 

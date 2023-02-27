@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 
-from limited.exceptions import LimitExceededException
 from .settings import SettingMap
 from ..zone import Zone
 

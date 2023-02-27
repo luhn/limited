@@ -1,8 +1,9 @@
 from .backend import Backend
+from .rate import Rate
 
 
+@dataclass(frozen=True)
 class Zone:
     name: str
-    size: int
-    rate: float
+    rate: Rate
     backend: Backend

@@ -1,4 +1,4 @@
 
 
-class LimitExceededException(Exception):
+class LimitExceeded(Exception):
     pass
