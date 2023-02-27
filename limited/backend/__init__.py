@@ -3,7 +3,6 @@ from typing import Dict, Type
 
 from .backend import Backend
 
-
 BUILTIN_BACKENDS: Dict[str, str] = {
     'memory': '.memory.MemoryBackend',
     'redis': '.redis.RedisBackend',

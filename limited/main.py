@@ -1,10 +1,11 @@
-from .backend import Backend, load_backend
-from .rate import Rate
-from ipaddress import IPv4Address, IPv6Address, ip_address, IPv6Network
+from ipaddress import IPv4Address, IPv6Address, IPv6Network, ip_address
 from typing import Mapping
-from .zone import Zone
+
+from .backend import Backend, load_backend
 from .exceptions import LimitExceeded
+from .rate import Rate
 from .settings import Settings
+from .zone import Zone
 
 
 class Limited:

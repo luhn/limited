@@ -2,8 +2,8 @@ from threading import Lock
 from time import monotonic
 from typing import MutableMapping, NamedTuple
 
-from .backend import Backend
 from ..zone import Zone
+from .backend import Backend
 
 try:
     from cachetools import LRUCache  # type: ignore

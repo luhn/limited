@@ -1,7 +1,6 @@
 import re
 from datetime import timedelta as TimeDelta
 
-
 SECOND = TimeDelta(seconds=1)
 MINUTE = 60 * SECOND
 HOUR = 60 * MINUTE

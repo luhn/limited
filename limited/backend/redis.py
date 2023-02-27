@@ -3,8 +3,8 @@ try:
 except ImportError:
     raise ImportError('Must have redis installed to use redis backend.')
 
-from .backend import Backend
 from ..zone import Zone
+from .backend import Backend
 
 
 class RedisBackend(Backend):

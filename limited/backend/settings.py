@@ -1,5 +1,4 @@
-from typing import Mapping, Any, Type, Generic, Literal, TypeVar, cast
-
+from typing import Any, Generic, Literal, Mapping, Type, TypeVar, cast
 
 X = TypeVar('X')
 

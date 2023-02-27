@@ -1,7 +1,8 @@
 import os
-from typing import TypedDict, Callable, Any, Mapping
-from .rate import Rate
+from typing import Any, Callable, Mapping, TypedDict
+
 from .backend import Backend
+from .rate import Rate
 
 
 class ZoneSettings(TypedDict, total=False):
