@@ -1,4 +1,3 @@
-import re
 from datetime import timedelta as TimeDelta
 
 
@@ -31,7 +30,7 @@ UNITS: dict[str, TimeDelta] = {
     'w': WEEK,
     'week': WEEK,
     'weeks': WEEK,
-    'm': MONTH,
+    'mo': MONTH,
     'month': MONTH,
     'months': MONTH,
     'y': YEAR,
@@ -49,7 +48,7 @@ class Rate:
 
     @classmethod
     def from_string(cls, s: str):
-        m = self.REGEX.match(s)
+        m = cls.REGEX.match(s)
         if m is None:
             raise ValueError(f'"{s}" is not a valid rate string.')
         count = int(m.group('count'))

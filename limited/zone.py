@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from .backend import Backend
 from .rate import Rate
 

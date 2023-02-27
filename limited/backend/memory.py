@@ -1,6 +1,6 @@
 from threading import Lock
 from time import monotonic
-from typing import MutableMapping, NamedTuple, Mapping
+from typing import MutableMapping, NamedTuple
 
 from .backend import Backend
 from ..zone import Zone

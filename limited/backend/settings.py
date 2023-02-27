@@ -1,9 +1,4 @@
-from abc import ABC
-from typing import Mapping, Any, Callable, Type, Generic, Literal, TypeVar, cast
-
-
-SettingType = type | Setting | Type[Setting]
-SettingMap = Mapping[str, SettingType]
+from typing import Mapping, Any, Type, Generic, Literal, TypeVar, cast
 
 
 X = TypeVar('X')
@@ -63,6 +58,10 @@ class BoolSetting(Setting[bool]):
         return bool(val)
 
 
+SettingType = type | Setting | Type[Setting]
+SettingMap = Mapping[str, SettingType]
+
+
 TYPE_MAP: dict[type, type[Setting]] = {
     str: StrSetting,
     int: IntSetting,
@@ -85,7 +84,10 @@ def _make_setting(setting: SettingType) -> Setting:
         return TYPE_MAP[setting]()
 
 
-def parse_settings(settings: SettingMap, values: Mapping[str, Any]) -> Mapping[str, Any]:
+def parse_settings(
+    settings: SettingMap,
+    values: Mapping[str, Any],
+) -> Mapping[str, Any]:
     output: Mapping[str, Any] = dict()
     for name, setting in settings.items():
         s = _make_setting(setting)

@@ -1,7 +1,7 @@
+import os
 from typing import TypedDict, NotRequired, Callable, Any
 from .rate import Rate
 from .backend import Backend
-from .zone import Zone
 
 
 class ZoneSettings(TypedDict):
@@ -32,8 +32,8 @@ ENV_MAP: list[tuple[str, str, Callable[[str], Any]]] = {
 
 def settings_from_env() -> Settings:
     settings: Settings = {
-        'backends': _backends_from_env(),
-        'zones': _zones_from_env(),
+        'backends': backends_from_env(),
+        'zones': zones_from_env(),
     }
     for name, env, cast in ENV_MAP:
         if env in os.environ:
@@ -58,8 +58,8 @@ def backends_from_env() -> dict[str, BackendSettings]:
 def _backend_from_env(name: str, backend_name: str) -> BackendSettings:
     prefix = f'LIMITED_BACKEND_{name.upper()}_'
     return {
-        k[len(PREFIX):].lower(): v for (k, v) in os.environ.items()
-        if k.starswith(PREFIX)
+        k[len(prefix):].lower(): v for (k, v) in os.environ.items()
+        if k.starswith(prefix)
     }
 
 
@@ -81,8 +81,23 @@ def zones_from_env() -> dict[str, ZoneSettings]:
     return zones
 
 
+INI_MAP: list[tuple[str, str, Callable[[str], Any]]] = {
+    ('ipv6_prefix', 'LIMITED_IPV6_PREFIX', int),
+    ('ipv6_prefix_scale_factor', 'LIMITED_IPV6_PREFIX_SCALE_FACTOR', int),
+    ('ipv6_rate_scale_factor', 'LIMITED_IPV6_RATE_SCALE_FACTOR', int),
+    ('ipv6_scale_count', 'LIMITED_IPV6_SCALE_COUNT', int),
+}
+
+
 def settings_from_ini(ini: dict[str, str]) -> Settings:
-    ...
+    settings: Settings = {
+        'backends': backends_from_ini(),
+        'zones': zones_from_ini(),
+    }
+    for name, env, cast in INI_MAP:
+        if env in ini:
+            settings[name] = cast(ini[env])
+    return settings
 
 
 def backends_from_ini(ini: dict[str, str]) -> dict[str, BackendSettings]:
@@ -106,12 +121,12 @@ def _backend_from_ini(
 ) -> BackendSettings:
     prefix = f'limit.backend.{name}.'
     return {
-        k[len(PREFIX):].lower(): v for (k, v) in ini.items()
-        if k.starswith(PREFIX)
+        k[len(prefix):].lower(): v for (k, v) in ini.items()
+        if k.starswith(prefix)
     }
 
 
-def zones_from_env(ini: dict[str, str]) -> dict[str, ZoneSettings]:
+def zones_from_ini(ini: dict[str, str]) -> dict[str, ZoneSettings]:
     PREFIX = 'limit.'
     BACKEND_SUFFIX = '.backend'
     items = (

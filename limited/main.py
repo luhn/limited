@@ -1,8 +1,10 @@
-from .backend import Backend, load_backend, Setting
-from ipaddress import IPv4Address, IPv6Address, ip_address
-from typing import Mapping, Any
+from .backend import Backend, load_backend
+from .rate import Rate
+from ipaddress import IPv4Address, IPv6Address, ip_address, IPv6Network
+from typing import Mapping
 from .zone import Zone
 from .exceptions import LimitExceeded
+from .settings import Settings
 
 
 class Limited:
@@ -26,8 +28,8 @@ class Limited:
                 backends[name] = backend_settings
             else:
                 backend_name = backend_settings.pop('backend')
-                Backend = load_backend(backend_name)
-                backends[name] = Backend(**backend_settings)
+                _Backend = load_backend(backend_name)
+                backends[name] = _Backend(**backend_settings)
 
         zones = dict[str, Zone] = dict()
         for name, zone_settings in settings['zones'].items():
@@ -102,7 +104,7 @@ class Limited:
     def limit_by_ipv6(
             self,
             zone: str | Zone,
-            ip: str |IPv4Address,
+            ip: str | IPv4Address,
             hard: bool = False,
     ):
         zone = self.get_zone(zone)
