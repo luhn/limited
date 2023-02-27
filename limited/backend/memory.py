@@ -31,10 +31,10 @@ class MemoryBackend(Backend):
     def _count(self, zone: Zone, key: str, time: float) -> int:
         bucket = self.buckets.get((zone.name, key))
         if bucket is None:
-            return zone.size
+            return zone.rate.count
         delta = time - bucket.last_updated
         tokens = bucket.tokens + delta * zone.rate
-        tokens = min(tokens, zone.size)
+        tokens = min(tokens, zone.rate.count)
         return int(tokens)
 
     def count(self, zone: Zone, key: str) -> int:

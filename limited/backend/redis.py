@@ -36,7 +36,7 @@ class RedisBackend(Backend):
         key = self._key(zone, identity)
         value = self.remove_func(
             keys=[key],
-            args=[zone.rate, zone.size, count],
+            args=[zone.rate.per_second, zone.rate.count, count],
         )
         return bool(value)
 

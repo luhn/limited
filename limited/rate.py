@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta as TimeDelta
 
 
@@ -40,7 +41,9 @@ UNITS: dict[str, TimeDelta] = {
 
 
 class Rate:
-    REGEX = r'(?P<count>[0-9]+)/(?P<duration>[0-9]*)(?P<unit>[a-zA-Z]+)'
+    REGEX = re.compile(
+        r'(?P<count>[0-9]+)/(?P<duration>[0-9]*)(?P<unit>[a-zA-Z]+)'
+    )
 
     def __init__(self, count: int, duration: TimeDelta):
         self.count = count
@@ -66,4 +69,6 @@ class Rate:
     def __mul__(self, val: int | float | TimeDelta) -> float:
         if isinstance(val, TimeDelta):
             val = val.total_seconds()
-        return val * self.per_second()
+        return val * self.per_second
+
+    __rmul__ = __mul__

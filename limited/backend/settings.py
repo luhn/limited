@@ -88,7 +88,7 @@ def parse_settings(
     settings: SettingMap,
     values: Mapping[str, Any],
 ) -> Mapping[str, Any]:
-    output: Mapping[str, Any] = dict()
+    output: dict[str, Any] = dict()
     for name, setting in settings.items():
         s = _make_setting(setting)
         value = values.get(name, Setting.MISSING)

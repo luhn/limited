@@ -4,7 +4,7 @@ from typing import Dict, Type
 from .backend import Backend
 
 
-BUILTIN_BACKENDS: Dict[str, Type[Backend]] = {
+BUILTIN_BACKENDS: Dict[str, str] = {
     'memory': '.memory.MemoryBackend',
     'redis': '.redis.RedisBackend',
     'dynamodb': '.dynamodb.DynamoDBBackend',
@@ -23,7 +23,7 @@ def load_backend(backend: str | Type[Backend]) -> Type[Backend]:
     * ``dynamodb``
 
     """
-    if issubclass(backend, Backend):
+    if isinstance(backend, type) and issubclass(backend, Backend):
         return backend
     elif isinstance(backend, str):
         try:
@@ -33,7 +33,7 @@ def load_backend(backend: str | Type[Backend]) -> Type[Backend]:
         p, m = backend.rsplit('.', 1)
         mod = importlib.import_module(p)
         attr = getattr(mod, m)
-        if issubclass(attr, Backend):
+        if isinstance(attr, type) and issubclass(attr, Backend):
             return attr
         else:
             raise TypeError('Backend must be subclass of Backend class.')

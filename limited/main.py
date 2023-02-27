@@ -19,6 +19,10 @@ class Limited:
     ):
         self.backends = backends
         self.zones = zones
+        self.ipv6_prefix = ipv6_prefix
+        self.ipv6_prefix_scale_factor = ipv6_prefix_scale_factor
+        self.ipv6_rate_scale_factor = ipv6_rate_scale_factor
+        self.ipv6_scale_count = ipv6_scale_count
 
     @classmethod
     def from_settings(cls, settings: Settings):
@@ -27,13 +31,32 @@ class Limited:
             if isinstance(backend_settings, Backend):
                 backends[name] = backend_settings
             else:
-                backend_name = backend_settings.pop('backend')
+                backend_name = backend_settings.pop('backend')  # type: ignore
                 _Backend = load_backend(backend_name)
-                backends[name] = _Backend(**backend_settings)
+                backends[name] = _Backend(**backend_settings)  # type: ignore
+        default_backend = backends.get('default')
 
-        zones = dict[str, Zone] = dict()
+        zones: dict[str, Zone] = dict()
         for name, zone_settings in settings['zones'].items():
-            zones[name] = Zone()
+            rate: Rate | str
+            if isinstance(zone_settings, (str, Rate)):
+                if default_backend is None:
+                    raise ValueError('Default backend is not defined.')
+                backend = default_backend
+                rate = zone_settings
+            elif isinstance(zone_settings, Mapping):
+                try:
+                    backend = backends[zone_settings.get('backend', 'default')]
+                except KeyError:
+                    raise ValueError(f'No such backend "{backend}"')
+                rate = zone_settings['rate']
+            else:
+                raise ValueError()
+            if isinstance(rate, str):
+                _rate = Rate.from_string(rate)
+            else:
+                _rate = rate
+            zones[name] = Zone(name=name, backend=backend, rate=_rate)
         KEYS = [
             'ipv6_prefix', 'ipv6_prefix_scale_factor',
             'ipv6_rate_scale_factor', 'ipv6_scale_count',
@@ -41,7 +64,7 @@ class Limited:
         kwargs = {}
         for key in KEYS:
             if key in settings:
-                kwargs[key] = settings[key]
+                kwargs[key] = settings[key]  # type: ignore
         return cls(
             backends=backends,
             zones=zones,
@@ -61,7 +84,7 @@ class Limited:
 
     def limit(self, zone: str | Zone, key: str, hard: bool = False) -> bool:
         zone = self.get_zone(zone)
-        if not zone.backend.remove(zone, key):
+        if not zone.backend.remove(zone, key, 1):
             if hard:
                 raise LimitExceeded()
             else:
@@ -70,7 +93,7 @@ class Limited:
 
     def increment(self, zone: str | Zone, key: str, count: int = 1) -> None:
         zone = self.get_zone(zone)
-        zone.backend.remove(zone, key)
+        zone.backend.remove(zone, key, 1)
 
     def check(self, zone: str | Zone, key: str) -> bool:
         zone = self.get_zone(zone)
@@ -104,7 +127,7 @@ class Limited:
     def limit_by_ipv6(
             self,
             zone: str | Zone,
-            ip: str | IPv4Address,
+            ip: str | IPv6Address,
             hard: bool = False,
     ):
         zone = self.get_zone(zone)
@@ -112,8 +135,8 @@ class Limited:
         for i in range(self.ipv6_scale_count):
             # For each scale factor, calculate the new network and rate, then
             # create a virtual zone and run the rate limit.
-            key = str(net.supernet(i * self.prefix_scale_factor))
-            count = zone.rate.count * i * self.prefix_scale_factor
+            key = str(net.supernet(i * self.ipv6_prefix_scale_factor))
+            count = zone.rate.count * i * self.ipv6_prefix_scale_factor
             rate = Rate(count=count, duration=zone.rate.duration)
             _zone = Zone(name=zone.name, rate=rate, backend=zone.backend)
             if not self.limit(_zone, key, hard=hard):
